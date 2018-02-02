@@ -23,7 +23,8 @@ function newQueue() {
       }
 
       count += 1;
-      return rear = newNode;
+      rear = newNode
+      return rear;
     },
     length: function() {
       return count;
@@ -33,14 +34,14 @@ function newQueue() {
         front = front.next;
         count -= 1;
       } else {
-        return front;
+        return null;
       }
     },
     getRear: function() {
-      return rear ? rear.value : rear;
+      return rear ? rear.value : null;
     },
     getFront: function() {
-      return front ? front.value : front;
+      return front ? front.value : null;
     }
   }
 }
