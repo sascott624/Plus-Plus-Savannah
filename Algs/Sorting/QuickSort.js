@@ -1,36 +1,36 @@
 "use strict"
 
 function quickSort(array) {
-  function swap(array, index1, index2) {
-    var temp = array[index1];
-    array[index1] = array[index2];
-    array[index2] = temp;
+  function swap(arr, index1, index2) {
+    var temp = arr[index1];
+    arr[index1] = arr[index2];
+    arr[index2] = temp;
   }
-  
-  function divideAndSort(array) {
-    if(array.length < 2) {
-      return array;
+
+  function divideAndSort(arr) {
+    if(arr.length < 2) {
+      return arr;
     }
-    
+
     var low = 0;
-    var high = array.length - 1;
-    var pivot = array[array.length - 1];
+    var high = arr.length - 1;
+    var pivot = arr[arr.length - 1];
 
     var j = -1;
     for(let i = low; i < high; i++) {
-      if(array[i] <= pivot) {
+      if(arr[i] <= pivot) {
         j += 1;
-        swap(array, j, i)
+        swap(arr, j, i)
       }
     }
 
     j += 1;
-    swap(array, j, array.length - 1);
-    return divideAndSort(array.slice(0, j)).concat(divideAndSort(array.slice(j)));
+    swap(arr, j, arr.length - 1);
+    return divideAndSort(arr.slice(0, j)).concat(divideAndSort(arr.slice(j)));
   }
-  
+
   return divideAndSort(array);
-} 
+}
 
 
 var firstArray = [ 8, 4, 2, 6, 7, 1, 5, 3 ];

@@ -1,23 +1,23 @@
 "use strict"
 
 function mergeSort(array) {
-  function divide(array) {
-    if(array.length < 2) {
-      return array
+  function divide(arr) {
+    if(arr.length < 2) {
+      return arr
     }
-    
-    var middle = Math.floor(array.length / 2);
-    var left = array.slice(0, middle);
-    var right = array.slice(middle);
-    
+
+    var middle = Math.floor(arr.length / 2);
+    var left = arr.slice(0, middle);
+    var right = arr.slice(middle);
+
     return merge(divide(left), divide(right));
   }
-  
+
   function merge(left, right) {
-    var max = left.length + right.length
+    var total = left.length + right.length
     var newArray = [];
-    
-    for(let i = 0; i < max; i++) {
+
+    for(let i = 0; i < total; i++) {
       if(left[0] <= right[0] || left.length >= 1 && right.length === 0) {
         newArray.push(left.shift())
       } else if(right[0] < left[0] || right.length >= 1 && left.length === 0){
@@ -27,7 +27,7 @@ function mergeSort(array) {
 
     return newArray;
   }
-  
+
   return divide(array);
 }
 

@@ -1,10 +1,10 @@
 "use strict"
 
 function selectionSort(array) {
-  function swap (array, index1, index2) {
+  function swap (arr, index1, index2) {
     var temp = array[index1];
-    array[index1] = array[index2];
-    array[index2] = temp;
+    arr[index1] = arr[index2];
+    arr[index2] = temp;
   }
 
   for(let i = 0; i < array.length; i++) {
@@ -18,22 +18,20 @@ function selectionSort(array) {
 
     swap(array, i, indexOfMin);
   }
-
-  return array;
 }
 
 var firstArray = [ 8, 4, 2, 6, 7, 1, 5, 3 ];
-var firstSort = selectionSort(firstArray);
-console.log(JSON.stringify(firstSort) === JSON.stringify([ 1, 2, 3, 4, 5, 6, 7, 8 ]));
+selectionSort(firstArray);
+console.log(JSON.stringify(firstArray) === JSON.stringify([ 1, 2, 3, 4, 5, 6, 7, 8 ]));
 
 var secondArray = [ 1, 2, 3, 5, 4, 6, 7, 8 ];
-var secondSort = selectionSort(secondArray);
-console.log(JSON.stringify(secondSort) === JSON.stringify([ 1, 2, 3, 4, 5, 6, 7, 8 ]));
+selectionSort(secondArray);
+console.log(JSON.stringify(secondArray) === JSON.stringify([ 1, 2, 3, 4, 5, 6, 7, 8 ]));
 
 var thirdArray = [ 5, 4, 1, -3, 2 ];
-var thirdSort = selectionSort(thirdArray);
-console.log(JSON.stringify(thirdSort) === JSON.stringify([ -3, 1, 2, 4, 5 ]));
+selectionSort(thirdArray);
+console.log(JSON.stringify(thirdArray) === JSON.stringify([ -3, 1, 2, 4, 5 ]));
 
 var fourthArray = [ 7, 3, 0, 1, 0, 2, 3 ];
-var fourthSort = selectionSort(fourthArray);
-console.log(JSON.stringify(fourthSort) === JSON.stringify([ 0, 0, 1, 2, 3, 3, 7 ]));
+selectionSort(fourthArray);
+console.log(JSON.stringify(fourthArray) === JSON.stringify([ 0, 0, 1, 2, 3, 3, 7 ]));
