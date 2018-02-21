@@ -16,15 +16,14 @@ function quickSort(array) {
     var high = arr.length - 1;
     var pivot = arr[arr.length - 1];
 
-    var j = -1;
+    var j = 0;
     for(let i = low; i < high; i++) {
       if(arr[i] <= pivot) {
-        j += 1;
         swap(arr, j, i)
+        j += 1;
       }
     }
 
-    j += 1;
     swap(arr, j, arr.length - 1);
     return divideAndSort(arr.slice(0, j)).concat(divideAndSort(arr.slice(j)));
   }
