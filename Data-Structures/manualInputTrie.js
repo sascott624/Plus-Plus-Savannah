@@ -4,7 +4,7 @@ function Node(value, parent) {
   this.val = value;
   this.parent = parent;
   this.children = [];
-  
+
   this.hasChild = function(value) {
     if(value === '$') {
       return this.isWordEnd();
@@ -24,14 +24,14 @@ function Node(value, parent) {
       return found;
     }
   }
-  
+
   this.isWordEnd = function() {
     var containsStop = this.children[0] && this.children[0].val === '$';
     return containsStop;
   }
 }
 
-function manualInputTrie() {
+function Trie() {
   var root = new Node("root", null);
   var input = [];
 
@@ -111,7 +111,7 @@ function manualInputTrie() {
       if(inputString) {
         return fullSuggestion;
       } else {
-        return "You typed '" + input.join('') + "'; Perhaps you want to type '" + fullSuggestion + "'?";        
+        return "You typed '" + input.join('') + "'; Perhaps you want to type '" + fullSuggestion + "'?";
       }
     }
   }
@@ -134,7 +134,7 @@ function manualInputTrie() {
         }
       }
     }
-    
+
     var suggestion = backtraceWord(stop)
 
     return suggestion;
@@ -146,9 +146,9 @@ function manualInputTrie() {
     if(resultNodes.length === 0) {
       return "Your input '" + input.join('') + "' is not a valid word, and does not match any suggestions in our dictionary";
     }
-    
-    var results = [];
-    
+
+    var results = [ ];
+
     for(const node of resultNodes) {
       var word = backtraceWord(node);
 
@@ -156,7 +156,8 @@ function manualInputTrie() {
         results.push(word);
       } else {
         var finalWord = suggestWord(word);
-        if(!results.includes(finalWord)) {
+
+        if(results.indexOf(finalWord) < 0) {
           results.push(finalWord)
         }
       }
@@ -164,21 +165,21 @@ function manualInputTrie() {
 
     return "Your input '" + input.join('') + "' is not a valid word. Perhaps you meant one of these:\n-" + results.join('\n-');
   }
-  
+
   function levenshteinSearch(maxCost) {
     if(!maxCost) {
       maxCost = 1;
     }
     var currentRow = range(input.length + 1);
     var results = [];
-    
+
     function matrixEDSearch(node, previousRow, maxCost) {
       // example: 'cat'         c  a  t
       // previousRow =     [ 0, 1, 2, 3 ]
       // currentRow =    b [ 1, 1, 2, 3 ]
       //                 i [ 2, 2, 2, 2 ]
       //                 t [ 3, 3, 2, ]
-      
+
       var columnCount = input.length + 1;
       var currentRow = [previousRow[0] + 1]; // [ 2, 2,]
       // initial row compared to null
@@ -190,21 +191,21 @@ function manualInputTrie() {
         var insertCost = currentRow[column - 1] + 1;
         var removeCost = previousRow[column] + 1;
         var swapCost = (input[column - 1] !== node.val) ? previousRow[column - 1] + 1 : previousRow[column - 1];
-        
+
         currentRow.push(Math.min(insertCost, removeCost, swapCost));
       }
-      
+
       if(currentRow[currentRow.length - 1] <= maxCost) {
         results.push(node);
       }
-      
+
       if(Math.min.apply(Math, currentRow) <= maxCost) {
         for(const childNode of node.children) {
           matrixEDSearch(childNode, currentRow, maxCost);
         }
       }
     }
-    
+
     for(const node of root.children) {
       if(node.val === '$') {
         continue
@@ -212,13 +213,13 @@ function manualInputTrie() {
 
       matrixEDSearch(node, currentRow, maxCost);
     }
-    
+
     return results;
   }
-  
+
   function backtraceWord(endNode) {
     var word = ''
-    
+
     var stack = [];
     var current = endNode;
 
@@ -237,7 +238,7 @@ function manualInputTrie() {
 
     return word;
   }
-  
+
   function range(start, end) {
     var range = [];
 
@@ -249,7 +250,7 @@ function manualInputTrie() {
     for(let i = start; i < end; i++) {
       range.push(i);
     }
-    
+
     return range;
   }
 
@@ -282,7 +283,7 @@ function manualInputTrie() {
   }
 }
 
-var trie = new manualInputTrie();
+var trie = new Trie();
 trie.insert('can');
 trie.insert('cat');
 trie.insert('car');
