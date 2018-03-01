@@ -178,13 +178,12 @@ function Trie() {
       // previousRow =     [ 0, 1, 2, 3 ]
       // currentRow =    b [ 1, 1, 2, 3 ]
       //                 i [ 2, 2, 2, 2 ]
-      //                 t [ 3, 3, 2, ]
+      //                 t [ 3, 3, 2,  ]
 
       var columnCount = input.length + 1;
-      var currentRow = [previousRow[0] + 1]; // [ 2, 2,]
-      // initial row compared to null
+      var currentRow = [previousRow[0] + 1];
       var remainder = range(1, columnCount); // [ 1, 2, 3 ]
-      // range takes care of the remaining comparisons
+      // remainder takes care of the remaining comparisons (ignoring first comparison to null input)
 
       for(let i = 0; i < remainder.length; i++) {
         var column = remainder[i];
