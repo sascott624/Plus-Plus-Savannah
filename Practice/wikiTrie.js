@@ -73,7 +73,7 @@ function Trie() {
         return "No suggestion needed: '" + suggestion + "' is a valid word!";
       }
     } else {
-      var fullSuggestion = autocomplete(current, suggestion);
+      var fullSuggestion = autocomplete(current);
       if(suggestFromAutocorrect) {
         return fullSuggestion;
       } else {
@@ -118,10 +118,14 @@ function Trie() {
     for(const node of resultNodes) {
       var word = backtraceWord(node);
 
+      if(getMinHeight(node) > 2) {
+        continue;
+      }
+
       if(node.val === '$') {
         results.push(word);
       } else {
-        var finalWord = suggestWord(word, true);
+        var finalWord = suggestWord(word, input.length);
 
         if(results.indexOf(finalWord) < 0) {
           results.push(finalWord)
@@ -219,6 +223,28 @@ function Trie() {
     return range;
   }
 
+  function getMinHeight(current) {
+    var minHeight;
+
+    if(!current) {
+      return 0;
+    }
+
+    if(current.children["$"]) {
+      return 1;
+    }
+
+    var children = [];
+
+
+    for(const child in current.children) {
+      children.push(1 + getMinHeight(current.children[child]));
+    }
+
+    return Math.min.apply(Math, children);
+
+  }
+
   return {
     insert: function(word) {
       addWord(word);
@@ -251,3 +277,5 @@ function parseInput(t, data) {
 var trie = new Trie();
 parseInput(trie, input);
 console.log(trie.getSuggestion('sha'));
+console.log(trie.getSuggestion('ict'));
+console.log(trie.getSuggestion('met'));
