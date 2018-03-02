@@ -1,5 +1,4 @@
 "use strict"
-const input = require('input');
 
 function Node(value, parent) {
   this.val = value;
@@ -70,7 +69,7 @@ function Trie() {
       if(suggestFromAutocorrect) {
         return suggestion;
       } else {
-        return "No suggestion needed: '" + suggestion + "' is a valid word!";
+        return 'No suggestion needed: ' + suggestion + ' is a valid word!';
       }
     } else {
       var fullSuggestion = autocomplete(current, suggestion);
@@ -232,22 +231,25 @@ function Trie() {
   }
 }
 
-function parseInput(t, data) {
-  for(const item in data) {
-    var paragraph = data[item];
-    paragraph = paragraph.toLowerCase();
-    var array = paragraph.split(' ');
-
-    var parsed = array.map(word =>
-      word.replace(/([^a-zA-Z])/, "")
-    )
-
-    for(const word of parsed) {
-      t.insert(word);
-    }
-  }
-}
-
 var trie = new Trie();
-parseInput(trie, input);
-console.log(trie.getSuggestion('sha'));
+
+trie.insert('can');
+console.log(trie.listNodes());
+trie.insert('cat');
+trie.insert('car');
+trie.insert('bit');
+trie.insert('bite');
+trie.insert('canteloupe');
+trie.insert('cash');
+trie.insert('dear');
+trie.insert('carpenter');
+// console.log(trie.listNodes());
+console.log(trie.getSuggestion('c'));
+console.log(trie.getSuggestion('ca'));
+console.log(trie.getSuggestion('can'));
+console.log(trie.getSuggestion('cant'));
+console.log(trie.getSuggestion('b'));
+console.log(trie.getSuggestion('ba'));
+console.log(trie.getSuggestion('bat'));
+console.log(trie.getSuggestion('crt'));
+console.log(trie.getSuggestion('dar'));
