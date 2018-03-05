@@ -29,7 +29,7 @@ function Trie() {
     return answer;
   }
 
-  function addWord(inputString) {
+  function addWord(inputString, articleId, index) {
     var currentNode = root;
 
     for(let i = 0; i <= inputString.length; i++) {
@@ -47,6 +47,14 @@ function Trie() {
         var newNode = new Node(letter, currentNode);
         currentNode.children[letter] = newNode;
         currentNode = newNode;
+      }
+
+      if(currentNode.val === "$") {
+        if(!currentNode.children[articleId]) {
+          currentNode.children[articleId] = [ ]
+        }
+
+        currentNode.children[articleId].push(index);
       }
     }
   }
@@ -75,9 +83,9 @@ function Trie() {
     } else {
       var fullSuggestion = autocomplete(current);
       if(suggestFromAutocorrect) {
-        return fullSuggestion;
+        return fullSuggestion.suggestion;
       } else {
-        return "You typed '" + inputString + "'; Perhaps you want to type '" + fullSuggestion + "'?";
+        return "You typed '" + inputString + "'; Perhaps you want to type '" + fullSuggestion.suggestion + "'."
       }
     }
   }
@@ -85,6 +93,7 @@ function Trie() {
   function autocomplete(current) {
     var queue = [];
     var stop = false;
+    var articles;
 
     for(const child in current.children) {
       queue.push(current.children[child]);
@@ -93,6 +102,7 @@ function Trie() {
     while(queue.length > 0 && !stop) {
       var current = queue.shift();
       if(current.val === '$') {
+        articles = current.children;
         stop = current.parent;
       } else {
         for(const child in current.children) {
@@ -103,10 +113,10 @@ function Trie() {
 
     var suggestion = backtraceWord(stop)
 
-    return suggestion;
+    return { suggestion, articles };
   }
 
-  function autocorrect(input) {
+  function autocorrect(input, autocorrectFromSearch = false) {
     var resultNodes = levenshteinSearch(input, 1);
 
     if(resultNodes.length === 0) {
@@ -131,6 +141,10 @@ function Trie() {
           results.push(finalWord)
         }
       }
+    }
+
+    if(autocorrectFromSearch) {
+      return results[0];
     }
 
     return "Your input '" + input + "' is not a valid word. Perhaps you meant one of these:\n-" + results.join('\n-');
@@ -245,22 +259,101 @@ function Trie() {
 
   }
 
+  function searchTrie(searchTerm) {
+    var inputArray;
+    var response = '';
+    var autocorrected = false;
+
+    if(searchTerm.includes(' ')) {
+      inputArray = searchTerm.split(' ');
+    } else {
+      inputArray = [ searchTerm ];
+    }
+
+    function find(word) {
+      var current = root;
+      var found = false;
+      var articles;
+
+      for(let i = 0; i <= word.length; i++) {
+        var letter;
+        if(i === word.length) {
+          letter = '$';
+        } else {
+          letter = word.charAt(i);
+        }
+
+        var exists = current.children[letter];
+        if(exists) {
+          if(letter === '$') {
+            found = backtraceWord(exists.parent);
+            articles = exists.children;
+          } else {
+            current = current.children[letter];
+          }
+        } else {
+          autocorrected = autocorrect(word, true);
+          return find(autocorrected);
+        }
+      }
+
+      return { foundWord: found, articles: articles };
+    }
+
+    var foundTerms = [ ];
+    var foundArticles = [ ];
+
+    for(var word of inputArray) {
+      var foundWordAndArticles = find(word);
+      foundTerms.push(foundWordAndArticles.word);
+      foundArticles.push(foundWordAndArticles.articles);
+    }
+
+      // if(found) {
+        // var sorted = [ ];
+        // for(const article in found) {
+        //   sorted.push([input[article].title, found[article].length]);
+        //   sorted.sort(function(a,b){
+        //     return b[1] - a[1]
+        //   })
+        // }
+
+        // if(autocorrected) {
+        //   response += "Keyword '" + word + "' is not a valid search term. Showing results instead for '" + autocorrected + "':"
+        // } else {
+        //   response += "Keyword(s) '" + word + "' appear(s) in the following article(s):"
+        // }
+        //
+        // for(const item of sorted) {
+        //   response += '\n-' + item[0] + ' (' + item[1] + ')'
+        // }
+      // } else {
+      //   return "No suggestions found."
+      // }
+    }
+
+    return response;
+  }
+
   return {
-    insert: function(word) {
-      addWord(word);
+    insert: function(word, article, indexOfWordAtArticle) {
+      addWord(word, article, indexOfWordAtArticle);
     },
     getSuggestion: function(inputString) {
       return suggestWord(inputString);
     },
     listNodes: function() {
       return traverseTrie();
+    },
+    search: function(inputString) {
+      return searchTrie(inputString);
     }
   }
 }
 
 function parseInput(t, data) {
   for(const item in data) {
-    var paragraph = data[item];
+    var paragraph = data[item]["text"];
     paragraph = paragraph.toLowerCase();
     var array = paragraph.split(' ');
 
@@ -268,14 +361,22 @@ function parseInput(t, data) {
       word.replace(/([^a-zA-Z])/, "")
     )
 
-    for(const word of parsed) {
-      t.insert(word);
+    for(let i = 0; i < parsed.length; i++) {
+      var word = parsed[i];
+      t.insert(word, item, i);
     }
   }
 }
 
 var trie = new Trie();
 parseInput(trie, input);
-console.log(trie.getSuggestion('sha'));
-console.log(trie.getSuggestion('ict'));
-console.log(trie.getSuggestion('met'));
+// console.log(trie.getSuggestion('sha'));
+// console.log(trie.getSuggestion('gill'));
+// console.log(trie.getSuggestion('ict'));
+// console.log(trie.getSuggestion('met'));
+// console.log(trie.getSuggestion('app'));
+// console.log(trie.getSuggestion('fis'));
+// console.log(trie.search("fish"));
+// console.log(trie.search("bird"));
+// console.log(trie.search("fsh"));
+console.log(trie.search("birds fish"));
