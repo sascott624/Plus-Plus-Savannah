@@ -240,7 +240,7 @@ function Trie() {
   function getMinHeight(current) {
     var minHeight;
 
-    if(!current) {
+    if(!current || !current.children) {
       return 0;
     }
 
@@ -297,7 +297,7 @@ function Trie() {
         }
       }
 
-      return { foundWord: found, articles: articles };
+      return { word: found, articles: articles };
     }
 
     var foundTerms = [ ];
@@ -309,27 +309,48 @@ function Trie() {
       foundArticles.push(foundWordAndArticles.articles);
     }
 
-      // if(found) {
-        // var sorted = [ ];
-        // for(const article in found) {
-        //   sorted.push([input[article].title, found[article].length]);
-        //   sorted.sort(function(a,b){
-        //     return b[1] - a[1]
-        //   })
-        // }
+    if(foundTerms.length === 1 && foundArticles.length === 1) {
+      var sorted = [ ];
 
-        // if(autocorrected) {
-        //   response += "Keyword '" + word + "' is not a valid search term. Showing results instead for '" + autocorrected + "':"
-        // } else {
-        //   response += "Keyword(s) '" + word + "' appear(s) in the following article(s):"
-        // }
-        //
-        // for(const item of sorted) {
-        //   response += '\n-' + item[0] + ' (' + item[1] + ')'
-        // }
-      // } else {
-      //   return "No suggestions found."
-      // }
+      for(const article in foundArticles[0]) {
+        sorted.push([input[article].title, foundArticles[0][article].length]);
+        sorted.sort(function(a,b){
+          return b[1] - a[1]
+        })
+      }
+
+      if(autocorrected) {
+        response += "Keyword '" + word + "' is not a valid search term. Showing results instead for '" + autocorrected + "':"
+      } else {
+        response += "Keyword(s) '" + word + "' appear(s) in the following article(s):"
+      }
+
+      for(const item of sorted) {
+        response += '\n-' + item[0] + ' (' + item[1] + ')'
+      }
+    } else {
+      var commonArticles = [ ]
+
+      for(const article in foundArticles[0]) {
+        for(let i = 1; i < foundArticles.length; i++) {
+          if(foundArticles[i][article]) {
+            commonArticles.push(article)
+          }
+        }
+      }
+
+      if(foundTerms.length > 1) {
+        response += "Your search "
+      } else {
+        response += "Keyword "
+      }
+
+      response += "'" + foundTerms.join(' ') + "' appears in the following article(s):"
+
+      for(const article of commonArticles) {
+        var title = input[article].title
+        response += '\n-' + title
+      }
     }
 
     return response;
@@ -380,3 +401,8 @@ parseInput(trie, input);
 // console.log(trie.search("bird"));
 // console.log(trie.search("fsh"));
 console.log(trie.search("birds fish"));
+console.log(trie.search("city italy"));
+console.log(trie.search("sweet"));
+console.log(trie.search("icte"));
+console.log(trie.search("snoww"));
+console.log(trie.search("tree"));
