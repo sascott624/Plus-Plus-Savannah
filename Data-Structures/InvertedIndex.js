@@ -29,16 +29,32 @@ function InvertedIndex() {
 
     var indexResults = { }
 
-    for(const word of inputArray) {
+    for(let i = -0; i < inputArray.length; i++) {
+      var word = inputArray[i]
       var stem = getStem(word)
-      indexResults[word] = index[stem]
+
+      if(stem === "preposition") {
+        inputArray[i] = "preposition"
+      } else {
+        indexResults[word] = index[stem]
+      }
     }
+    
+    inputArray = inputArray.filter(entry => {
+      return entry !== "preposition"
+    })
 
     var results = compareResults(inputArray, indexResults, strict);
-    var response = "Your " + (results.strict ? "strict " : "") + "search '" + inputString + "' appears in the following articles:"
+    var response = "Your " + (results.strict ? "strict " : "") + "search '" + inputString
+    
+    if(results.commonArticles.length === 0) {
+      response += "' did not yield any search results."
+    } else {
+      response += "' appears in the following articles:"
 
-    for(const common of results.commonArticles) {
-      response += "\n-" + input[common].title
+      for(const common of results.commonArticles) {
+        response += "\n-" + input[common].title
+      }
     }
 
     return response
@@ -187,6 +203,12 @@ function InvertedIndex() {
 }
 
 function getStem(word) {
+  var prepositions = [ "the", "a", "an", "as", "on", "of", "for", "from", "in", "to", "into", "onto", "about", "around" ]
+  
+  if(prepositions.includes(word)) {
+    return "preposition"
+  }
+
   var endings = [ "ing", "est", "ies:y", "ier:y", "ied:y", "ly", "ed", "er", "s" ]
   var newWord;
 
@@ -225,18 +247,27 @@ function getStem(word) {
 
 function parseInput(invertedIndex, data) {
   for(const item in data) {
-    var paragraph = data[item]["text"];
-    paragraph = paragraph.toLowerCase();
-    var array = paragraph.split(' ');
+    var paragraph = data[item]["text"]
+    paragraph = paragraph.toLowerCase()
+    var array = paragraph.split(' ')
 
     var parsed = array.map(word =>
       word.replace(/([^a-zA-Z])/, "")
     )
+    
+    var prepositionCount = 0
 
     for(let i = 0; i < parsed.length; i++) {
-      var word = parsed[i];
-      var stem = getStem(word);
-      invertedIndex.insert(stem, item, i);
+      var index = i - prepositionCount
+      var word = parsed[i]
+      var stem = getStem(word)
+
+      if(stem === "preposition") {
+        prepositionCount += 1
+        continue
+      }
+
+      invertedIndex.insert(stem, item, index)
     }
   }
 }
@@ -250,9 +281,7 @@ parseInput(index, input);
 // console.log(index.search('apple tree'));
 
 // console.log(index.search('white'));
-console.log(index.search('shark'));
-console.log(index.search('white, shark'));
-console.log(index.search('great white shark'));
-// console.log(index.search('white shark'));
-// console.log(index.search('white shark'));
-// console.log(index.search('sharks'));
+// console.log(index.search('shark'));
+// console.log(index.search('white, shark'));
+// console.log(index.search('great white shark'));
+console.log(index.search("the white shark"));
