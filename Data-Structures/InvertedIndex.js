@@ -18,34 +18,31 @@ function InvertedIndex() {
   }
 
   function parseAndSearch(inputString) {
+    var strict = inputString.charCodeAt(0) === 34 || inputString.charCodeAt(0) === 39;
     var inputArray = inputString.split(' ');
-    var results = [ ];
+    inputArray = inputArray.map(str => {
+      return str.replace(/([^a-zA-Z])/, "")
+    })
+
+    var indexResults = { };
 
     for(const word of inputArray) {
       var stem = getStem(word);
-      results.push(index[stem]);
+      indexResults[word] = index[stem];
     }
 
-    if(inputArray.length === 1) {
-      var response = "Your search '" + inputString + "' appears in the following articles:"
-      var result = results[0];
-      for(const article in result) {
-        response += "\n-" + input[article].title
-      }
-      return response;
-    } else {
-      return compareResults(inputArray, results);
-    }
+    return compareResults(inputArray, indexResults, strict);
   }
 
-  function compareResults(inputArray, articles) {
+  function compareResults(inputArray, results, isStrict) {
+    var response = ''
     var articleCounts = { }
-    var commonArticles = { }
+    var commonArticles = [ ]
 
-    for(let i = 0; i < articles.length; i++) {
-      for(const article in articles[i]) {
+    for(const word in results) {
+      for(const article in results[word]) {
         if(!articleCounts[article]) {
-          articleCounts[article] = 0
+          articleCounts[article] = 0;
         }
 
         articleCounts[article] += 1;
@@ -53,34 +50,102 @@ function InvertedIndex() {
     }
 
     for(const id in articleCounts) {
-      if(articleCounts[id] === articles.length) {
-        commonArticles[id] = [ ]
+      if(articleCounts[id] === Object.keys(results).length) {
 
-        for(let i = 0; i < articles.length; i++) {
-          var found = articles[i];
-          for(const article in found) {
+        for(const word in results) {
+          for(const article in results[word]) {
             if(article === id) {
-              commonArticles[id].push(found[article])
+              var indices = results[word][article];
+
+              if(isStrict) {
+                commonArticles.push({ word: word, indices: indices, article: article })
+              } else {
+                if(commonArticles.indexOf(article) < 0) {
+                  commonArticles.push(article);
+                }
+              }
             }
           }
         }
       }
     }
 
-    for(const common in commonArticles) {
-      var indices = commonArticles[common];
-      // for(let i = 0; i < indices.length; i++) {
-      //   for(let j = 0; j < indices[i].length; j++) {
-      //     var index = indices[i][j];
-      //
-      //   }
-      // }
-    }
+    if(isStrict) {
+      var sortedCommonArticles = [ ];
+      var mins = [ ];
+      var sorted = false;
 
-    var response = "Your search '" + inputArray.join(' ') + "' appears in the following articles:"
+      for(const article of commonArticles) {
+        var index = article.indices.shift();
+        mins.push({ word: article.word, index: index, article: article.article })
+      }
 
-    for(const common in commonArticles) {
-      response += "\n-" + input[common].title
+      while(!sorted) {
+        var minimum = null;
+        var word = null;
+        var article = null;
+        var indexToReplace = null;
+
+        for(let i = 0; i < mins.length; i++) {
+          var min = mins[i];
+
+          if(min) {
+            if(!minimum || min.index < minimum) {
+              minimum = min.index;
+              word = min.word
+              article = min.article
+              indexToReplace = i;
+            }
+          } else {
+            sorted = true;
+          }
+        }
+
+        if(!minimum) {
+          sorted = true;
+        } else {
+          sortedCommonArticles.push({ word: word, index: minimum, article: article });
+          var replace = commonArticles[indexToReplace]
+          mins[indexToReplace] = { word: replace.word, index: replace.indices.shift(), article: replace.article }
+        }
+      }
+
+      var strictCommonArticles = [ ]
+
+      for(let i = 0; i < sortedCommonArticles.length; i++) {
+        var length = inputArray.length;
+
+        for(let j = 0; j < length; j++) {
+          var baseIndex = sortedCommonArticles[i].index;
+
+          if(sortedCommonArticles[j + i].word === inputArray[j] && sortedCommonArticles[j + i].index === baseIndex + j) {
+            if(j === length - 1) {
+              var article = sortedCommonArticles[j].article
+              if(strictCommonArticles.indexOf(article) < 0) {
+                strictCommonArticles.push(article);
+              }
+            } else {
+              continue;
+            }
+          } else {
+            break;
+          }
+        }
+      }
+
+      if(strictCommonArticles.length > 0) {
+        response += "Your strict search '" + inputArray.join(' ') + "' appears in the following articles:"
+      }
+
+      for(const common of strictCommonArticles) {
+        response += "\n-" + input[common].title
+      }
+    } else {
+      response = "Your search '" + inputArray.join(' ') + "' appears in the following articles:"
+
+      for(const common of commonArticles) {
+        response += "\n-" + input[common].title
+      }
     }
 
     return response;
@@ -129,7 +194,7 @@ function getStem(word) {
   if(!newWord) {
     newWord = word
   }
-  // console.log(newWord);
+
   return newWord;
 }
 
@@ -161,7 +226,8 @@ parseInput(index, input);
 // index.lookup('fish');
 
 console.log(index.search('tree'));
+console.log(index.search('lemon, tree'));
 console.log(index.search('lemon tree'));
-console.log(index.search('apple tree'));
-console.log(index.search('white shark'));
-console.log(index.search('sharks'));
+// console.log(index.search('apple tree'));
+// console.log(index.search('white shark'));
+// console.log(index.search('sharks'));
