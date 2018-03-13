@@ -111,6 +111,7 @@ function InvertedIndex() {
 
     if(isStrict) {
       var sortedCommonArticles = { }
+      // console.log(strictCommonArticles);
 
       for(const articleId in strictCommonArticles) {
         var allFoundWords = strictCommonArticles[articleId].words
@@ -127,30 +128,33 @@ function InvertedIndex() {
   }
 
   function merge(words, indices) {
+    var newArray = [ ]
     var totalCount = 0
     for(const setOfIndices of indices) {
       totalCount += setOfIndices.length
     }
 
-    var newArray = [ ]
-
     for(let i = 0; i < totalCount; i++) {
-      var minimumIndex = null
-      var position = null;
+      var minimum = null
+      var position = null
 
       for(let j = 0; j < indices.length; j++) {
         var set = indices[j]
 
-        if(!minimumIndex) {
-          minimumIndex = set[0]
+        if(set.length === 0) {
+          continue
+        }
+
+        if(minimum === null) {
+          minimum = set[0]
           position = j
-        } else if(set[0] !== null && set[0] < minimumIndex) {
-          minimumIndex = set[0]
+        } else if(set[0] !== null && set[0] < minimum) {
+          minimum = set[0]
           position = j
         }
       }
 
-      minimumIndex = indices[position].shift()
+      var minimumIndex = indices[position].shift()
       var minimumWord = words[position]
       newArray.push({ word: minimumWord, index: minimumIndex })
     }
@@ -180,7 +184,7 @@ function InvertedIndex() {
               continue
             }
           } else {
-            break
+            continue
           }
         }
       }
@@ -280,8 +284,12 @@ parseInput(index, input);
 // console.log(index.search('lemon tree'));
 // console.log(index.search('apple tree'));
 
-// console.log(index.search('white'));
-// console.log(index.search('shark'));
-// console.log(index.search('white, shark'));
+console.log(index.search('white'));
+console.log('\n');
+console.log(index.search('shark'));
+console.log('\n');
+console.log(index.search('white, shark'));
+console.log('\n');
 // console.log(index.search('great white shark'));
-console.log(index.search("the white shark"));
+// console.log('\n');
+console.log(index.search('the white shark'));
