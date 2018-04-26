@@ -1,0 +1,10 @@
+{
+  "name": "async-interview",
+  "version": "1.0.0",
+  "description": "",
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "async": "^2.5.0"
+  }
+}
