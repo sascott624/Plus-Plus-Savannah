@@ -1,8 +1,13 @@
 "use strict"
 
-module.exports = function() {
+const articleData = require('../Input/input.json');
+/**
+* Broken! Need to update InvertedIndex to parse strict search
+* based on quotes
+**/
+
+function InvertedIndex() {
   var internalIndex = { };
-  var internalArticleIndex = { };
 
   function getLength() {
     return Object.keys(internalIndex).length;
@@ -12,11 +17,6 @@ module.exports = function() {
     for(const articleId in data) {
       var paragraph = data[articleId]["text"].toLowerCase();
       var wordsInArticle = paragraph.split(' ');
-
-      internalArticleIndex[articleId] = {
-        title: data[articleId]["title"],
-        wordCount: wordsInArticle.length
-      };
 
       var formattedWords = wordsInArticle.map(word =>
         word.replace(/[^a-zA-Z]/, "")
@@ -85,61 +85,96 @@ module.exports = function() {
 
   function insertInput(stem, articleId, loc) {
     if(!internalIndex[stem]) {
-      internalIndex[stem] = { }
+      internalIndex[stem] = { };
     }
 
     if(!internalIndex[stem][articleId]) {
-      internalIndex[stem][articleId] = [ ]
+      internalIndex[stem][articleId] = [ ];
     }
 
-    internalIndex[stem][articleId].push(loc)
+    internalIndex[stem][articleId].push(loc);
   }
 
-  function parseAndSearch(inputString) {
-    var lowerCaseSrch = inputString.toLowerCase();
-    var strict = lowerCaseSrch.indexOf(',') < 0 && lowerCaseSrch.indexOf(' ') > 0;
-    var inputArray;
+  function newParseAndSearch(searchTermsArray) {
+    const parsedSearchTermsArray = searchTermsArray.map(s => {
+      return s.toLowerCase();
+    });
 
-    if(!strict && lowerCaseSrch.indexOf(',') > 0) {
-      inputArray = lowerCaseSrch.split(', ');
-    } else {
-      inputArray = lowerCaseSrch.split(' ');
-    }
+    var lookupResultsObj = { };
 
-    var indexResults = { }
-
-    for(let i = -0; i < inputArray.length; i++) {
-      var word = inputArray[i];
-      var stem = getStem(word);
+    for(let i = 0; i < parsedSearchTermsArray.length; i++) {
+      var word = searchTermsArr[i];
+      var stem = getStem(word, true);
 
       if(stem === "#") {
-        inputArray[i] = "#";
+        searchTermsArr[i] = "#";
       } else {
-        if(internalIndex[stem]) {
-          const articleIds = Object.keys(internalIndex[stem]);
+        lookupResultsObj[word] = { };
+        var articleResults = Object.keys(internalIndex[stem]);
 
-          for(const id of articleIds) {
-            indexResults[word] = indexResults[word] || { };
-            indexResults[word][id] = internalIndex[stem][id].slice();
-          }
+        for(const articleId of articleResults) {
+          lookupResultsObj[word][articleId] = internalIndex[stem][articleId].slice();
+        }
+      }
+    }
+  }
+
+  function parseAndSearch(searchTermsArray) {
+    console.log(searchTermsArray);
+    return;
+    var searchTerms = search.toLowerCase();
+    var isStrict = searchTerms.indexOf(',') < 0 && searchTerms.indexOf(' ') > 0;
+
+    var openQuote = searchTerms.indexOf('"');
+    var strictTerms = [ ];
+
+    while(openQuote >= 0) {
+      var closeQuote = searchTerms.indexOf('"', openQuote + 1);
+      var strictWordOrPhrase = searchTerms.slice(openQuote + 1, closeQuote);
+      strictTerms.push([strictWordOrPhrase]);
+      openQuote = searchTerms.indexOf('"', closeQuote + 1);
+    }
+
+    var searchTermsArr;
+
+    if(!isStrict && searchTerms.indexOf(',') > 0) {
+      searchTermsArr = searchTerms.split(', ');
+    } else {
+      searchTermsArr = searchTerms.split(' ');
+    }
+
+    var lookupResultsObj = { };
+
+    for(let i = 0; i < searchTermsArr.length; i++) {
+      var word = searchTermsArr[i];
+      var stem = getStem(word, true);
+
+      if(stem === "#") {
+        searchTermsArr[i] = "#";
+      } else {
+        lookupResultsObj[word] = { };
+        var articleResults = Object.keys(internalIndex[stem]);
+
+        for(const articleId of articleResults) {
+          lookupResultsObj[word][articleId] = internalIndex[stem][articleId].slice();
         }
       }
     }
 
-    inputArray = inputArray.filter(entry => {
-      return entry !== "#";
+    searchTermsArr = searchTermsArr.filter(entry => {
+      return entry !== "#"
     })
 
-    var results = compareResults(inputArray, indexResults, strict);
-    var response = "Your " + (results.strict ? "strict " : "") + "search '" + inputString;
+    var results = compareResults(searchTermsArr, lookupResultsObj, isStrict);
+    var response = "Your " + (results.strict ? "strict " : "") + "search '" + search;
 
     if(results.commonArticles.length === 0) {
-      response += "' did not yield any search results."
+      response += "' did not yield any search results.";
     } else {
-      response += "' appears in the following articles:"
+      response += "' appears in the following articles:";
 
       for(const common of results.commonArticles) {
-        response += "\n-" + internalArticleIndex[common].title;
+        response += "\n-" + articleData[common].title;
       }
     }
 
@@ -187,7 +222,7 @@ module.exports = function() {
               strictCommonArticles[commonArticleId].indicesArr.push(indices);
             } else {
               if(commonArticles.indexOf(articleId) < 0) {
-                commonArticles.push(articleId)
+                commonArticles.push(articleId);
               }
             }
           }
@@ -209,15 +244,14 @@ module.exports = function() {
       commonArticles = compareSortedIndices(sortedCommonArticles, searchTermsArr);
     }
 
-    return { commonArticles, strict: isStrict }
+    return { commonArticles: commonArticles, strict: isStrict };
   }
 
   function merge(wordsArr, indicesArr) {
     var sortedArr = [ ];
     var totalCount = 0;
-
     for(const setOfIndices of indicesArr) {
-      totalCount += setOfIndices.length
+      totalCount += setOfIndices.length;
     }
 
     for(let i = 0; i < totalCount; i++) {
@@ -249,6 +283,7 @@ module.exports = function() {
   }
 
   function compareSortedIndices(sortedCommonArticles, searchTermsArr) {
+    //sortedCommon, inputArray
     var correctlyPositioned = [ ];
     var wordCount = searchTermsArr.length;
 
@@ -262,9 +297,9 @@ module.exports = function() {
           if(sortedByLoc[j + i] && sortedByLoc[j + i].word === searchTermsArr[j] && sortedByLoc[j + i].index === baseIndex + j) {
             // each word is in order, so this article is a valid result
             if(j === wordCount - 1) {
-              var article = articleId
+              var article = articleId;
               if(correctlyPositioned.indexOf(article) < 0) {
-                correctlyPositioned.push(article)
+                correctlyPositioned.push(article);
               }
             } else {
               continue;
@@ -283,20 +318,71 @@ module.exports = function() {
     insertBulk: function(articleData) {
       insertBulkData(articleData);
     },
-    insert: function(stem, articleId, loc) {
-      insertInput(stem, articleId, loc);
+    insert: function(input, articleId, position) {
+      insertInput(input, articleId, position);
     },
-    search: function(input) {
-      return parseAndSearch(input);
+    search: function(searchTermsArray) {
+      return parseAndSearch(searchTermsArray);
     },
     lookup: function(word) {
       return internalIndex[word];
     },
     length: function() {
       return getLength();
-    },
-    getWordCount: function(articleId) {
-      return internalArticleIndex[articleId].wordCount;
     }
   }
 }
+
+
+var myIndex = new InvertedIndex();
+myIndex.insertBulk(articleData);
+// console.log(myIndex.length());
+
+// console.log(myIndex.search('tree'));
+// console.log('\n');
+// console.log('----------------');
+//
+// console.log(myIndex.search('lemon, tree'));
+// console.log('\n');
+// console.log('----------------');
+//
+// console.log(myIndex.search('lemon tree'));
+// console.log('\n');
+// console.log('----------------');
+//
+// console.log(myIndex.search('apple tree'));
+// console.log('\n');
+// console.log('----------------');
+
+
+console.log(myIndex.search(['white']));
+console.log('\n');
+console.log('----------------');
+console.log(myIndex.search(['shark']));
+console.log('\n');
+console.log('----------------');
+console.log(myIndex.search(['white', 'Shark']));
+console.log('\n');
+console.log('----------------');
+console.log(myIndex.search(['great white shark']));
+console.log('\n');
+console.log('----------------');
+
+
+// console.log(myIndex.search('including Norse Greek and European Christian traditions'));
+// console.log('\n');
+// console.log('----------------');
+// console.log(myIndex.search('European Christian traditions'));
+// console.log('\n');
+// console.log('----------------');
+
+// console.log(myIndex.search('"great", "white"'));
+// console.log('\n');
+// console.log('----------------');
+// console.log(myIndex.search('"great", "white", "the greatest"'));
+// console.log('\n');
+// console.log('----------------');
+//
+// console.log(myIndex.search('great white'));
+// console.log('\n');
+// console.log('----------------');
