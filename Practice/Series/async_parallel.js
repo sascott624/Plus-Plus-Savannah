@@ -12,7 +12,7 @@ var callWhenDone = function(err) {
 }
 
 var doItInParallel = function (callback) {
-	async.parallel([
+	async.promiseParallel([
 		function (done) {
 			console.log('1');
 			done();

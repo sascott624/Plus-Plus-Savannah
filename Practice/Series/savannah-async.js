@@ -34,53 +34,82 @@ module.exports = {
   auto: function(funcObject, cb) {
     var results = { };
     var allFuncNames = Object.keys(funcObject).slice();
+    var executionStatusObj = { };
 
-    var parallelCount = 0;
-    var parallelFuncs = allFuncNames.filter(f => typeof(funcObject[f]) === 'function' );
-
-    var seriesCount = 0;
-    var seriesFuncs = allFuncNames.filter(f => !parallelFuncs.includes(f));
-
-    for(const parallelFunc of parallelFuncs) {
-      function parallelDone(err, result) {
-        results[parallelFunc] = result;
-        parallelCount += 1;
-
-        if(parallelCount === parallelFuncs.length) {
-          performSeriesFuncs();
+    function iterate() {
+      for(const funcName of allFuncNames) {
+        // if we already have the result of the current function or execution of the current function is pending, continue
+        if(results[funcName] || executionStatusObj[funcName]) {
+          continue;
         }
-      }
 
-      funcObject[parallelFunc](parallelDone);
-    }
+        function done(err, result) {
+          executionStatusObj[funcName] = err ? 'err' : 'executed';
+          results[funcName] = result;
 
-    function performSeriesFuncs() {
-      var seriesFuncName = seriesFuncs[seriesCount];
-      var seriesFuncArray = funcObject[seriesFuncName];
+          var executedFuncs = allFuncNames.filter(func => executionStatusObj[func] === 'executed')
 
-      function seriesDone(err, result) {
-        if(err) {
-          console.log('ERR: ' + err);
+          if(executedFuncs.length === allFuncNames.length) {
+            cb(null, results);
+          } else {
+            iterate();
+          }
+        }
+
+        var originalFunc;
+        var originalArry;
+
+        if(typeof(funcObject[funcName]) === 'function') {
+          originalFunc = funcObject[funcName];
+
+          executionStatusObj[funcName] = 'pending';
+          originalFunc(done);
         } else {
-          results[seriesFuncName] = result;
-          seriesCount += 1;
+          originalArry = funcObject[funcName];
 
-          if(seriesCount !== seriesFuncs.length) {
-            performSeriesFuncs();
+          let j = 0;
+
+          while(originalFunc === undefined) {
+            if(typeof(originalArry[j]) === 'string') {
+              results[originalArry[j]] ? j += 1 : originalFunc = false;
+            } else {
+              originalFunc = originalArry[j];
+              executionStatusObj[funcName] = 'pending';
+              originalFunc(results, done);
+            }
           }
         }
       }
-
-      for(const paramOrFunc of seriesFuncArray) {
-        if(typeof(paramOrFunc) === 'string' && !results[paramOrFunc]) {
-          seriesDone(new Error('dependent function not completed'));
-          return;
-        } else {
-          if(typeof(paramOrFunc) === 'function') {
-            paramOrFunc(results, seriesDone);
-          }
-        }
-      }
     }
+
+    iterate();
+  },
+  promiseSeries: function(arrayOfFuncs, cb) {
+    var previous;
+
+    for(let i = arrayOfFuncs.length-1; i >= 0; i --) {
+      var promisifiedFunc = promisify(arrayOfFuncs[i]);
+      if (i === arrayOfFuncs.length - 1) {
+        promisifiedFunc.then(function() {
+          cb();
+        });
+      } else {
+        promisifiedFunc.then(function() {
+          previous()
+        });
+      }
+      previous = promisifiedFunc;
+    }
+
+    previous();
+  },
+  promiseParallel: function(arrayOfFuncs, cb) {
+    Promise.all(arrayOfFuncs.map(promisify))
+      .then(function(val) { cb(null, val); })
+      .catch(function(err) { cb(err) });
+
+  },
+  promiseAuto: function(funcObject, cb) {
+
   }
 }

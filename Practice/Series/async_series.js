@@ -12,7 +12,7 @@ var callWhenDone = function(err) {
 }
 
 var doItInSeries = function (callback) {
-	async.series([
+	async.promiseSeries([
 		function (done) {
 			console.log('1');
 			done();
